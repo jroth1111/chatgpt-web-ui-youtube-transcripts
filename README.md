@@ -61,9 +61,34 @@ The unit tests use synthetic data and local SQLite. They do not prove that your 
 
 ### 2. Set up the Sites backend
 
-Import this source into a new, or explicitly selected, ChatGPT Site. Let Sites assign its own project identity; do not copy another deployment's identity. Enable the MCP capability and a managed D1 binding named `DB` using `.openai/hosting.json`. Apply the migrations in `drizzle/` through the managed deployment workflow, without resetting existing production data.
+**Deployment happens through ChatGPT's Sites workflow—not `git push`, `npm run build`, or Docker.** Those commands prepare/check the source; Docker hosts only the acquisition worker. This repository does not ship a standalone Sites deployment CLI or assume a GitHub-import button exists.
 
-Configure these **private deployment settings**, never in committed files:
+#### A. Create the Site from this repository
+
+1. Open **Work** in ChatGPT web, or Work/Codex in the ChatGPT desktop app. Start a conversation and mention **`@Sites`** (or explicitly ask to build a website). For an existing Site, open **Sites** in the sidebar and choose its edit action instead—do not accidentally create a replacement.
+2. Give that Sites-capable task the public repository URL and this setup prompt. If it cannot retrieve GitHub source, attach a source-only archive of the repository, excluding local dependencies, runtime data and secrets.
+
+```text
+@Sites Create a new private website named YouTube Transcripts using the
+actual source from https://github.com/jroth1111/chatgpt-web-ui-youtube-transcripts.
+Do not recreate a look-alike from the README. Read the installation guide.
+Use Sites-managed D1 bound as DB, apply the supplied drizzle migrations,
+and expose the existing ten MCP tools at /mcp. Preserve managed Sites
+authentication and enable the mcp capability in .openai/hosting.json.
+Do not deploy the Docker acquisition worker inside Sites.
+Save a version and show the preview, required setting names and any blocker.
+Do not invent a project ID, publish publicly, print secrets, or claim live
+caption retrieval before the separate signed worker and plugin are tested.
+Ask before credentials/security grants; wait for my review before publishing.
+```
+
+3. Review its saved version and preview. Require confirmation that it used this source, retained `app/mcp/route.ts` and both acquisition routes, provisioned `DB`, and applied the migrations. Let Sites assign the project ID; do not copy another deployment's identity. A preview alone does not verify backend storage or MCP configuration.
+
+The creation/editing entry points are documented in [Creating and using Sites](https://help.openai.com/en/articles/20001339-creating-and-using-chatgpt-sites). Missing Work/Sites or a denied permission is an account/admin/rollout blocker, not something `npm` can install.
+
+#### B. Enter hosted settings privately
+
+As the **Site owner**, open **Sites → your Site → More actions → Settings** and add the hosted environment values/secrets below. Enter secret values there, **not in the chat prompt, source files, `.openai/hosting.json`, or GitHub**. After settings change, have the Sites task redeploy the approved saved version. See the [Sites developer guide](https://developers.openai.com/codex/sites) for this settings/redeployment flow.
 
 | Setting | Value / purpose |
 |---|---|
@@ -73,7 +98,13 @@ Configure these **private deployment settings**, never in committed files:
 | `ACQUISITION_PUBLIC_KEY` | Public Ed25519 key from worker initialization below |
 | `ACQUISITION_CLAIM_WORKER_ID` | The matching public worker ID, to pin job claims |
 
-Publish the Site and record its actual HTTPS origin. The MCP URL is `https://YOUR-SITE/mcp`. Initial publication and key registration may need separate managed configuration steps; do not treat a successful build as a configured service.
+The worker public key/ID come from step 3, so deployment is intentionally staged: configure owner/service auth and `ACQUISITION_MODE` first; publish to obtain the origin; initialize (but do not start) the worker; add its public key/ID in Site settings; then redeploy before starting it. Until registration is complete, acquisition is not ready. Do not temporarily disable authentication to get around this ordering.
+
+#### C. Publish the approved version and capture its URL
+
+Open the reviewed Site's **Share** controls, confirm the intended audience, and select **Publish** as the owner. Keep the audience limited unless wider access was separately approved. Once live, use **Visit** or **Copy link** to record the actual HTTPS origin. Append `/mcp` for the MCP endpoint; never use the preview URL or a guessed hostname. Owner publication is also required to create the initial associated plugin. Publishing updates a production URL, so review the saved version first. [Publishing steps](https://help.openai.com/en/articles/20001339-creating-and-using-chatgpt-sites), [Site-hosted plugin lifecycle](https://help.openai.com/en/articles/20001547-hosting-a-plugin-with-chatgpt-sites).
+
+Ask the Sites task to confirm the published version, migrations, environment setting **names only**, and MCP `initialize`/`tools/list` results. A bare browser GET to `/mcp` is not an MCP handshake; a 401 without authentication can be expected. A successful build is not proof of a published or configured service.
 
 The owner identity headers are trusted only behind the Sites gateway that authenticates users and strips caller-supplied identity headers. Do not expose this application on an arbitrary host with spoofable identity headers. The repository does **not** implement a standalone OAuth authorization server: the managed Sites gateway provides that integration.
 
@@ -89,7 +120,7 @@ docker compose -p youtube-transcripts -f compose.worker.yaml run --rm worker \
   node scripts/private-acquisition-worker.mjs --init
 ```
 
-Initialization generates a private signing key **inside the worker volume** and prints only its public identity. Register that public key and worker ID in the Site settings above. Optionally set `EXPECTED_WORKER_ID` on the worker to detect a wrong volume/key. Then start it:
+Initialization generates a private signing key **inside the worker volume** and prints only its public identity. Register that public key and worker ID in the Site settings above, then have the Sites task **redeploy the approved saved version with those settings**. Confirm that registration is active before starting the worker; otherwise an auth denial may latch it stopped. Optionally set `EXPECTED_WORKER_ID` on the worker to detect a wrong volume/key. Then start it:
 
 ```sh
 docker compose -p youtube-transcripts -f compose.worker.yaml up -d
@@ -102,7 +133,16 @@ The worker is non-root, has a read-only container filesystem, bounded resources 
 
 ### 4. Connect ChatGPT web UI
 
-In the account/workspace's Apps/custom-app settings, create/connect the app using your published `/mcp` URL and the **managed OAuth flow**. Scan the actual tools, complete the authorization prompt and verify that all ten tools appear. Refresh the app's tool definitions after backend tool changes. UI names and developer-mode availability change; use the official guides linked above rather than assuming that an API bearer token field exists.
+**Use the Site-generated plugin first; manually creating a generic custom MCP app is not the default installation path.** After the owner publishes the MCP-enabled Site, the Sites task should display its associated plugin card:
+
+1. Select **Install** on that card, then finish the managed connection/authorization flow.
+2. To find your created plugin later, open **Plugins → Personal → Created by you**. If it is disconnected, select **Connect** and complete the unfinished authorization.
+3. Inspect its tools: all ten names in the table above should appear. Publish Site changes before expecting changed tools, then verify the plugin's current tool list.
+4. Mention/select that installed plugin in a new chat and invoke a real transcript tool.
+
+If no card appears, ask the **same Sites task** to verify that the owner published the MCP-enabled version and to surface its associated plugin. Do not create duplicate plugins or substitute a guessed URL. Workspace roles may need plugin-use, upload and MCP-creation permissions. See [OpenAI's Site-hosted plugin installation and troubleshooting guide](https://help.openai.com/en/articles/20001547-hosting-a-plugin-with-chatgpt-sites).
+
+Only if your account instead exposes the generic Apps/custom-MCP flow, use its actual endpoint/authentication controls and the managed OAuth integration supported by that deployment. Do not assume an API bearer-token field or invent OAuth endpoints. Installing a plugin and sharing a Site are separate operations; neither substitutes for authorization.
 
 Select or mention your connected app in a new ChatGPT conversation. The app's display name determines the mention, for example `YouTube Transcripts`; this is an MCP app, not a Codex skill installed into ChatGPT. Ask it to use `get_transcripts` on a real video and return the complete cleaned text, title and URL. Pending acquisition needs another call; an HTTP 200 or a green connection indicator is not a transcript success.
 
