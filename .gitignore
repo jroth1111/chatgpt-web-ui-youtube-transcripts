@@ -38,6 +38,9 @@ yarn-error.log*
 # typescript
 next-env.d.ts
 /dist/
+# These are source plugins, not generated build output.
+!/build/
+!/build/**
 /.wrangler/
 # Checkout-local execution profile and tool state; never publish them.
 /.sites-runtime/
