@@ -1,0 +1,23 @@
+-- LOCAL SQLITE TEST FIXTURE ONLY. Production migrations remain immutable and additive.
+PRAGMA foreign_keys = ON;
+CREATE TABLE transcript_snapshots (id TEXT PRIMARY KEY NOT NULL, owner_key TEXT NOT NULL, video_id TEXT NOT NULL, request_lang TEXT NOT NULL, resolved_lang TEXT NOT NULL, track_id TEXT NOT NULL, extractor_version TEXT NOT NULL, cache_key TEXT NOT NULL, retrieved_ms INTEGER NOT NULL, expires_at INTEGER NOT NULL, bytes INTEGER NOT NULL, page_count INTEGER NOT NULL, metadata_json TEXT NOT NULL);
+CREATE INDEX idx_snapshot_lookup ON transcript_snapshots(owner_key,video_id,request_lang,extractor_version,expires_at);
+CREATE INDEX idx_snapshot_expiry ON transcript_snapshots(expires_at);
+CREATE INDEX idx_snapshot_cache_key ON transcript_snapshots(cache_key);
+CREATE TABLE transcript_chunks (snapshot_id TEXT NOT NULL REFERENCES transcript_snapshots(id) ON DELETE CASCADE, page INTEGER NOT NULL, first_index INTEGER NOT NULL, segments_json TEXT NOT NULL, PRIMARY KEY(snapshot_id,page));
+CREATE TABLE extractor_leases (slot INTEGER PRIMARY KEY NOT NULL, token TEXT NOT NULL, expires_at INTEGER NOT NULL);
+CREATE TABLE transcript_claims (request_key TEXT PRIMARY KEY NOT NULL, token TEXT NOT NULL, expires_at INTEGER NOT NULL);
+CREATE TABLE creator_jobs (id TEXT PRIMARY KEY NOT NULL, request_key TEXT NOT NULL, owner_key TEXT NOT NULL, creator_url TEXT NOT NULL, lang_key TEXT NOT NULL, requested_limit INTEGER NOT NULL, state_json TEXT NOT NULL, created_ms INTEGER NOT NULL, expires_at INTEGER NOT NULL, revision INTEGER NOT NULL, lease_token TEXT, lease_expires INTEGER NOT NULL);
+CREATE INDEX idx_creator_recent ON creator_jobs(request_key,created_ms);
+CREATE TABLE creator_job_pages (job_id TEXT NOT NULL REFERENCES creator_jobs(id) ON DELETE CASCADE, revision INTEGER NOT NULL, response_json TEXT NOT NULL, PRIMARY KEY(job_id,revision));
+CREATE TABLE acquisition_jobs (id TEXT PRIMARY KEY NOT NULL,owner_key TEXT NOT NULL,video_id TEXT NOT NULL,lang_key TEXT NOT NULL,status TEXT NOT NULL,created_ms INTEGER NOT NULL,next_attempt_ms INTEGER NOT NULL,attempts INTEGER NOT NULL,lease_expires INTEGER NOT NULL,worker_id TEXT,token TEXT,claim_key TEXT,global_slot INTEGER,global_token TEXT,failure_code TEXT,snapshot_id TEXT);
+CREATE INDEX idx_acquisition_pending ON acquisition_jobs(status,next_attempt_ms,created_ms);
+CREATE TABLE acquisition_nonces (worker_id TEXT NOT NULL,nonce TEXT NOT NULL,expires_at INTEGER NOT NULL,PRIMARY KEY(worker_id,nonce));
+CREATE INDEX idx_acquisition_nonce_expiry ON acquisition_nonces(expires_at);
+CREATE TABLE transcript_defaults (owner_key TEXT NOT NULL,video_id TEXT NOT NULL,policy TEXT NOT NULL,snapshot_id TEXT NOT NULL,PRIMARY KEY(owner_key,video_id,policy));
+CREATE TABLE `chapter_manifests` ( 	`id` text PRIMARY KEY NOT NULL, 	`owner_key` text NOT NULL, 	`video_id` text NOT NULL, 	`created_ms` integer NOT NULL, 	`document_json` text NOT NULL );
+CREATE TABLE `metadata_jobs` ( 	`id` text PRIMARY KEY NOT NULL, 	`owner_key` text NOT NULL, 	`kind` text NOT NULL, 	`resource_id` text NOT NULL, 	`input_json` text NOT NULL, 	`status` text NOT NULL, 	`created_ms` integer NOT NULL, 	`next_attempt_ms` integer NOT NULL, 	`attempts` integer NOT NULL, 	`lease_expires` integer NOT NULL, 	`worker_id` text, 	`token` text, 	`claim_key` text, 	`global_slot` integer, 	`global_token` text, 	`failure_code` text, 	`result_json` text );
+CREATE INDEX `idx_metadata_pending` ON `metadata_jobs` (`status`,`next_attempt_ms`,`created_ms`);
+CREATE TABLE `playlist_pages` ( 	`session_id` text NOT NULL, 	`revision` integer NOT NULL, 	`response_json` text NOT NULL, 	PRIMARY KEY(`session_id`, `revision`), 	FOREIGN KEY (`session_id`) REFERENCES `playlist_sessions`(`id`) ON UPDATE no action ON DELETE cascade );
+CREATE TABLE `playlist_sessions` ( 	`id` text PRIMARY KEY NOT NULL, 	`owner_key` text NOT NULL, 	`request_key` text NOT NULL, 	`state_json` text NOT NULL, 	`revision` integer NOT NULL, 	`created_ms` integer NOT NULL, 	`lease_token` text, 	`lease_expires` integer NOT NULL );
+CREATE INDEX `idx_playlist_request` ON `playlist_sessions` (`owner_key`,`request_key`,`created_ms`);

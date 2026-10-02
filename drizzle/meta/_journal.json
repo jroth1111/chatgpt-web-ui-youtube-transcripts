@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1790847652802,
+      "tag": "0000_typical_blink",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1790852699143,
+      "tag": "0001_faithful_dracula",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790861265558,
+      "tag": "0002_cooing_tigra",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1790871305124,
+      "tag": "0003_spotty_red_hulk",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1790903248567,
+      "tag": "0004_demonic_dragon_lord",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1790914156201,
+      "tag": "0005_nappy_starbolt",
+      "breakpoints": true
+    }
+  ]
+}

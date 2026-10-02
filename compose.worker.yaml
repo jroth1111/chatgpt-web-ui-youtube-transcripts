@@ -1,0 +1,41 @@
+services:
+  state-init:
+    image: node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402
+    user: "0:0"
+    read_only: true
+    network_mode: none
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+    volumes: ["state:/state"]
+    command: ["node", "--input-type=module", "-e", "const fs=await import('node:fs/promises');await fs.chmod('/state',0o700);await fs.chown('/state',1000,1000);"]
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    user: "1000:1000"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 64
+    mem_limit: 192m
+    cpus: 0.5
+    restart: unless-stopped
+    environment:
+      YOUTUBE_MCP_ORIGIN: ${YOUTUBE_MCP_ORIGIN:?Set the published Site HTTPS origin}
+      YOUTUBE_WORKER_ROOT: /state/profile
+      EXPECTED_WORKER_ID: ${EXPECTED_WORKER_ID:-}
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=16m,mode=1777"]
+    volumes: ["state:/state"]
+    depends_on:
+      state-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "scripts/server-worker.mjs", "--health-check"]
+      interval: 60s
+      timeout: 5s
+      start_period: 30s
+      retries: 2
+volumes:
+  state:

@@ -1,0 +1,66 @@
+{
+  "name": "@sinco-lab/mcp-youtube-transcript",
+  "version": "0.0.12",
+  "description": "A server built on the Model Context Protocol (MCP) that enables direct downloading of YouTube video transcripts, supporting AI and video analysis workflows.",
+  "license": "MIT",
+  "author": "sinco",
+  "homepage": "https://github.com/sinco-lab/mcp-youtube-transcript",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sinco-lab/mcp-youtube-transcript.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sinco-lab/mcp-youtube-transcript/issues"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "youtube",
+    "youtube-transcript",
+    "transcript",
+    "subtitles",
+    "captions",
+    "video",
+    "ai",
+    "claude",
+    "claude-desktop",
+    "cursor",
+    "cline",
+    "typescript",
+    "modelcontextprotocol"
+  ],
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "bin": {
+    "mcp-youtube-transcript": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "tsc && chmod +x dist/*.js",
+    "clean": "rm -rf dist",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "prepublishOnly": "npm run clean && npm run build",
+    "release:patch": "npm version patch && git push origin HEAD --follow-tags",
+    "release:minor": "npm version minor && git push origin HEAD --follow-tags",
+    "release:major": "npm version major && git push origin HEAD --follow-tags"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "typescript": "^5.6.2"
+  }
+}
