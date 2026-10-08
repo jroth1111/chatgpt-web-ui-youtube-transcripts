@@ -32,7 +32,7 @@ test('batch: explicit denial is isolated, never retried, and does not discard ot
 });
 test('batch: opaque per-video cursors survive and remain outside caption Markdown',async()=>{
   const cursor='opaque-sensitive-cursor';
-  const result=await transcriptBatch({call:async(_name,args)=>{assert.equal(args.next_cursor,cursor);return {...page(args.url),has_more:true,next_cursor:'next-sensitive-cursor',page_count:3,page_index:1};}}, {videos:[ids[0]],next_cursors:{[ids[0]]:cursor}},'owner');
+  const result=await transcriptBatch({call:async(_name,args)=>{assert.equal(args.next_cursor,cursor);return {...page(args.url),has_more:true,next_cursor:'next-sensitive-cursor',page_count:3,page_index:1};}}, {videos:[ids[0]],delivery:'paged',next_cursors:{[ids[0]]:cursor}},'owner');
   assert.equal(result.next_cursors[ids[0]],'next-sensitive-cursor');assert.equal(result.has_more,true);assert(!result.markdown.includes('sensitive-cursor'));
 });
 test('batch: duplicates extract once and time-budget exhaustion never starts a fetch',async()=>{

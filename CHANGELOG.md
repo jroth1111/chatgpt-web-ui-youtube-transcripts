@@ -1,3 +1,15 @@
+# 0.4.2
+
+- Stop cached cleaned assembly at the exact wire-output bound or time budget,
+  returning resumable progress instead of discarding available captions.
+- Pack default single-video cleaned continuations across immutable storage
+  chunks. Validate snapshot/hash/language/page/index continuity; preserve raw
+  and timed paging, explicit paging, fitting full texts and all stored hashes.
+- Expose the software version in actual tool replies and include it in whole
+  response sizing. No database migration, worker/key change or failure reset.
+- Add deadline, Unicode/ASR reconstruction, integrity and wire-size regressions.
+  Synthetic checks are not live ChatGPT-client acceptance.
+
 # 0.4.1
 
 - Align package, MCP discovery and runtime verification software versions.
