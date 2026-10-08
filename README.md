@@ -40,6 +40,21 @@ Successful stored captions are reused across normalized links and repeated calls
 
 Full cleaned text is returned when the **whole serialized response fits 240 KiB**. Larger results explicitly return continuation cursors—never silent truncation. Follow each video's `next_cursors`; creator and playlist selection cursors are separate. Selection processes at most ten items per call. `acquisition_pending` requires a follow-up after the stated delay. Explicit access/bot denials must not be retried or bypassed.
 
+Do not confuse selection completion with caption completion:
+
+| Workflow | Selection / positions | Caption overflow |
+|---|---|---|
+| `get_transcripts` | Requested video IDs | `has_more` → `next_cursors` |
+| `get_creator_transcripts` | `has_more_creator` → `creator_cursor` | `has_more` → `get_transcripts` with `next_cursors` |
+| `get_playlist` | `has_more_playlist` → `playlist_cursor` | Metadata only; generic `has_more` is **not** the position-enumeration flag |
+| `get_playlist_transcripts` | `has_more_playlist` → `playlist_cursor` | `has_more` → `get_transcripts` with `next_cursors` |
+
+Keep the two loops separate. A terminal creator/playlist selection can still
+have incomplete caption bodies. Finish every successful video's caption cursor;
+do not count pending, denied or overflow pages as complete transcripts. A client
+must retain the actual opaque cursors across execution cells; volatile local
+state is not a substitute for the returned continuation handles.
+
 For a single video, default cleaned continuations pack multiple immutable storage pages into one byte-bounded response. `first_segment_index` and `returned_segment_count` describe the actual returned cues; `page_index`, `storage_page_end` and `storage_pages_consumed` describe physical storage pages, not the number of client calls. A final tail remains `delivery: paged`, not a whole transcript. Assembly also stops at its time budget with a real continuation cursor. Raw/timed tools and explicit `delivery: paged` keep their original storage-page granularity. Every tool reply includes `structuredContent.software_version` for client-side runtime verification.
 
 Cached assembly reuses its authenticated immutable manifest only within that invocation, and avoids redundant previous-cue reads while the incremental cleaner retains context. Owner, video, language, snapshot and index checks remain enforced. Storage failures stay explicit; `storage_error_class` is a fixed nonsecret diagnostic category, not the raw provider error or proof of a specific hosting limit.
