@@ -1,7 +1,8 @@
+import {SOFTWARE_VERSION} from "../lib/version.mjs";
 // Owned isolated workerd + D1 harness. Synthetic credentials/captions only.
 import { Miniflare } from 'miniflare';
 import { build } from 'esbuild';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { generateKeyPairSync } from 'node:crypto';
@@ -26,7 +27,7 @@ try{
   const db=await mf.getD1Database('DB');const schema=await readFile(path.join(project,'tests/schema-fixture.sql'),'utf8');await db.exec(schema.split('\n').filter(line=>!line.trim().startsWith('--')).join('\n'));
   const base='https://synthetic-runtime.example',rpc=(method,params={},authenticated=true)=>new Request(base+'/mcp',{method:'POST',headers:{'content-type':'application/json',accept:'application/json, text/event-stream',...(authenticated?{authorization:('Bearer '+'fixture'.repeat(8))}:{})},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});
   assert.equal((await dispatch(rpc('initialize',{protocolVersion:'2025-03-26'},false))).status,401);receipt.checks.push('MCP_authentication_enforced');
-  const init=await (await dispatch(rpc('initialize',{protocolVersion:'2025-03-26'}))).json();assert.equal(init.result.serverInfo.version,'0.4.0');receipt.checks.push('MCP_initialize_0.4.0');
+  const init=await (await dispatch(rpc('initialize',{protocolVersion:'2025-03-26'}))).json();assert.equal(init.result.serverInfo.version,SOFTWARE_VERSION);receipt.checks.push(`MCP_initialize_${SOFTWARE_VERSION}`);
   const list=await (await dispatch(rpc('tools/list'))).json();assert.equal(list.result.tools.length,10);receipt.checks.push('ten_tools_six_legacy_schemas_preserved');
   const id='abcdefghij0',jobId='a'.repeat(64),now=Date.now();await db.prepare("INSERT INTO acquisition_jobs (id,owner_key,video_id,lang_key,status,created_ms,next_attempt_ms,attempts,lease_expires) VALUES (?,'service:mcp',?,?,'queued',?,?,0,0)").bind(jobId,id,DEFAULT_JOB_LANGUAGE,now,now).run();
   const signed=(route,input)=>signedRequest(key.privateKey,route,input,{base});
@@ -71,5 +72,5 @@ try{
   assert.equal(lastRepair.result.structuredContent.has_more,false);assert.equal(lastRepair.result.structuredContent.segment_hash,firstRepair.result.structuredContent.segment_hash);
   const explicitArabic=await (await dispatch(rpc('tools/call',{name:'get_transcript',arguments:{url:repairedId,lang:'ar'}}))).json();assert.equal(explicitArabic.result.structuredContent.snapshot_id,arabic.id);
   receipt.checks.push('real_workerd_default_alias_repair_same_track_reuse_immutable_Arabic_and_stable_pages');
-  receipt.status='passed';receipt.recorded_at=new Date().toISOString();await writeFile(path.join(project,'work/private-acquisition-runtime-receipt.json'),JSON.stringify(receipt,null,2),{mode:0o600});console.log(JSON.stringify(receipt));
+  receipt.status='passed';receipt.recorded_at=new Date().toISOString();await mkdir(path.join(project,'work'),{recursive:true});await writeFile(path.join(project,'work/private-acquisition-runtime-receipt.json'),JSON.stringify(receipt,null,2),{mode:0o600});console.log(JSON.stringify(receipt));
 }finally{if(mf)await mf.dispose();await rm(root,{recursive:true,force:true});}

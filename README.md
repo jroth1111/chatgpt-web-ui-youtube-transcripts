@@ -49,7 +49,7 @@ Transcript cleaning does not summarize, translate, infer speakers or invent miss
 You need Node.js **22.13+**, an existing Docker/Dokploy VPS, access to ChatGPT Sites with managed D1/MCP support, and permission to create/connect a custom ChatGPT app. Availability and administrator controls vary by account: consult the current [ChatGPT MCP setup guide](https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt) and [app connection guide](https://developers.openai.com/plugins/deploy/connect-chatgpt).
 
 ```sh
-git clone https://github.com/jroth1111/chatgpt-web-ui-youtube-transcripts.git
+git clone https://github.com/YOUR_USERNAME/chatgpt-web-ui-youtube-transcripts.git
 cd chatgpt-web-ui-youtube-transcripts
 npm ci
 npm test
@@ -70,7 +70,7 @@ The unit tests use synthetic data and local SQLite. They do not prove that your 
 
 ```text
 @Sites Create a new private website named YouTube Transcripts using the
-actual source from https://github.com/jroth1111/chatgpt-web-ui-youtube-transcripts.
+actual source from https://github.com/YOUR_USERNAME/chatgpt-web-ui-youtube-transcripts.
 Do not recreate a look-alike from the README. Read the installation guide.
 Use Sites-managed D1 bound as DB, apply the supplied drizzle migrations,
 and expose the existing ten MCP tools at /mcp. Preserve managed Sites
@@ -157,7 +157,7 @@ Repeat successful requests and independently verify reuse of the same stored sna
 Copy this into an agent with access to your browser, GitHub CLI and deployment tools:
 
 ```text
-Install https://github.com/jroth1111/chatgpt-web-ui-youtube-transcripts
+Install https://github.com/YOUR_USERNAME/chatgpt-web-ui-youtube-transcripts
 for my ChatGPT web UI, using ChatGPT Sites for the authenticated MCP/cache
 and an isolated Docker/Dokploy VPS acquisition worker.
 

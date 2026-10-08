@@ -1,3 +1,4 @@
+import {SOFTWARE_VERSION} from "../lib/version.mjs";
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, createHash } from 'node:crypto';
@@ -107,7 +108,7 @@ test('ten queued IDs/URLs/share links traverse signed claim, acquisition, upload
     for(let i=0;i<10;i++)assert.equal((await worker.once()).status,'complete');
     const rpc=(name,args)=>new Request(base+'/mcp',{method:'POST',headers:{authorization:('Bearer '+'fixture'.repeat(8)),'content-type':'application/json',accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:name,params:args})});
     const env={...h.env,MCP_AUTH_KEY:'fixture'.repeat(8),ACQUISITION_MODE:'private_mac'};
-    const init=await (await handleMcp(rpc('initialize',{protocolVersion:'2025-03-26'}),env)).json();assert.equal(init.result.serverInfo.version,'0.4.0');
+    const init=await (await handleMcp(rpc('initialize',{protocolVersion:'2025-03-26'}),env)).json();assert.equal(init.result.serverInfo.version,SOFTWARE_VERSION);
     const list=await (await handleMcp(rpc('tools/list',{}),env)).json();assert.equal(list.result.tools.length,10);
     const call=async()=> (await (await handleMcp(rpc('tools/call',{name:'get_transcripts',arguments:{videos}}),env,{serviceFactory:()=>service})).json()).result;
     const first=await call(),again=await call();assert.equal(first.structuredContent.success_count,10);assert.equal(again.structuredContent.success_count,10);assert.equal(fetched,10);assert.deepEqual(first.structuredContent.results.map(r=>r.snapshot_id),again.structuredContent.results.map(r=>r.snapshot_id));assert.match(first.content[0].text,/Synthetic faithful captions/);assert.doesNotMatch(first.content[0].text,/00:00:00/);
