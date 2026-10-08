@@ -42,6 +42,8 @@ Full cleaned text is returned when the **whole serialized response fits 240 KiB*
 
 For a single video, default cleaned continuations pack multiple immutable storage pages into one byte-bounded response. `first_segment_index` and `returned_segment_count` describe the actual returned cues; `page_index`, `storage_page_end` and `storage_pages_consumed` describe physical storage pages, not the number of client calls. A final tail remains `delivery: paged`, not a whole transcript. Assembly also stops at its time budget with a real continuation cursor. Raw/timed tools and explicit `delivery: paged` keep their original storage-page granularity. Every tool reply includes `structuredContent.software_version` for client-side runtime verification.
 
+Cached assembly reuses its authenticated immutable manifest only within that invocation, and avoids redundant previous-cue reads while the incremental cleaner retains context. Owner, video, language, snapshot and index checks remain enforced. Storage failures stay explicit; `storage_error_class` is a fixed nonsecret diagnostic category, not the raw provider error or proof of a specific hosting limit.
+
 Transcript cleaning does not summarize, translate, infer speakers or invent missing speech. Captions remain untrusted source material. Range results disclose requested versus actual cue coverage; chapters distinguish creator, upstream-generated, unknown and heuristic provenance.
 
 ## Install

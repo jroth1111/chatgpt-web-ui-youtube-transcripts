@@ -1,3 +1,15 @@
+# 0.4.3
+
+- Reuse the invocation-local authenticated immutable snapshot manifest while
+  streaming cached chunks. The incremental cleaner already holds previous
+  cues, so following pages need one chunk read instead of three database reads.
+- Keep owner/snapshot/video/language checks and reject JSON-shaped capability
+  substitutes. No cross-request cache, storage rewrite or migration is added.
+- Surface only fixed nonsecret storage-error classes, never provider messages,
+  SQL, identities, paths or credential-bearing exception causes.
+- Add synthetic query-budget, namespace-isolation and error-redaction tests.
+  Query savings do not establish a particular live platform failure cause.
+
 # 0.4.2
 
 - Stop cached cleaned assembly at the exact wire-output bound or time budget,
