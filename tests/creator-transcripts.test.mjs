@@ -96,7 +96,7 @@ test('creator: simultaneous identical cursor cannot overwrite workflow or repeat
   assert.equal(h.calls.length,12);
 });
 test('creator: expired writer cannot return an unsaved response after a replacement commits',async()=>{
-  const db=localDb();let time=0,attempts=0,started,finish;
+  const db=localDb();let time=0,attempts=0,started,finish;db.setClock(()=>time);
   const running=new Promise(resolve=>started=resolve),pause=new Promise(resolve=>finish=resolve);
   const service={cache:new SnapshotCache(db,{now:()=>time}),call:async()=>{
     const attempt=++attempts;if(attempt===1){started();await pause;}

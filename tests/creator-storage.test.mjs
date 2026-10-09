@@ -21,7 +21,7 @@ function catalog(videos,counters) {
 }
 
 test('creator storage: expired workflow cursors fail before source calls; caption snapshots remain durable',async()=>{
-  const db=localDb();let now=1000,serviceCalls=0;
+  const db=localDb();let now=1000,serviceCalls=0;db.setClock(()=>now);
   try {
     const cache=new SnapshotCache(db,{now:()=>now}),saved=[];
     for(const id of ids)saved.push(await cache.write(owner,fixture(id),'en'));

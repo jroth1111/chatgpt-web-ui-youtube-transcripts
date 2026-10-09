@@ -61,6 +61,8 @@ Default cleaned delivery assembles immutable storage pages internally for every 
 
 Cached assembly reuses its authenticated immutable manifest only within that invocation, reads up to 32 internal storage chunks per database query, and renders the cleaner once. Creator/playlist replay records are also internally chunked with atomic commits and checksums, so a large reply is not forced into one D1 row. Apply the additive `0006` migration when updating an existing deployment; previous inline replay records remain readable. Owner, video, language, snapshot and index checks remain enforced. Storage failures stay explicit; `storage_error_class` is a fixed nonsecret diagnostic category, not the raw provider error or proof of a specific hosting limit.
 
+Replay commits fence every write against database execution time, not a timestamp captured before queuing or serialization. A final transaction assertion rolls back any partially skipped conditional writes, including their replay manifest and workflow revision. Expired or replaced writers cannot leave orphaned response chunks or return an unsaved success. These guards do not add a response-size cap, change stored caption text, or alter authentication.
+
 Transcript cleaning does not summarize, translate, infer speakers or invent missing speech. Captions remain untrusted source material. Range results disclose requested versus actual cue coverage; chapters distinguish creator, upstream-generated, unknown and heuristic provenance.
 
 ## Install
