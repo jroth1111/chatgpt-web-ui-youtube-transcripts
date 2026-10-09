@@ -63,6 +63,8 @@ Cached assembly reuses its authenticated immutable manifest only within that inv
 
 Replay commits fence every write against database execution time, not a timestamp captured before queuing or serialization. A final transaction assertion rolls back any partially skipped conditional writes, including their replay manifest and workflow revision. Expired or replaced writers cannot leave orphaned response chunks or return an unsaved success. These guards do not add a response-size cap, change stored caption text, or alter authentication.
 
+Tool execution errors retain `isError: true` and mirror `software_version` into both their structured data and JSON text. Clients that expose only exception text can still identify the deployed runtime; error categories and retryability remain unchanged.
+
 Transcript cleaning does not summarize, translate, infer speakers or invent missing speech. Captions remain untrusted source material. Range results disclose requested versus actual cue coverage; chapters distinguish creator, upstream-generated, unknown and heuristic provenance.
 
 ## Install
