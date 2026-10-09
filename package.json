@@ -1,6 +1,6 @@
 {
   "name": "chatgpt-web-ui-youtube-transcripts",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -8,6 +8,7 @@
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "check:public": "node scripts/check-public-export.mjs",
+    "check:artifact": "node scripts/check-artifact-runtime.mjs",
     "install:ci": "node scripts/install-ci.mjs",
     "dev": "node scripts/run-framework.mjs dev",
     "build": "node scripts/run-framework.mjs build",

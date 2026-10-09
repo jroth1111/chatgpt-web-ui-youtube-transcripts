@@ -6,12 +6,15 @@ const [command, ...args] = process.argv.slice(2);
 if (!["dev", "build"].includes(command)) throw new Error("Expected dev or build.");
 const managedLinux = readExecutionProfile() === "managed-linux";
 
-if (managedLinux && command === "build") {
-  const result = spawnSync("bash", [
-    fileURLToPath(new URL("./build-verified.sh", import.meta.url)), ...args,
-  ], { stdio: "inherit" });
+if (command === "build") {
+  const binary=managedLinux?"bash":process.execPath;
+  const buildArgs=managedLinux?[fileURLToPath(new URL("./build-verified.sh", import.meta.url)),...args]:[fileURLToPath(new URL("../node_modules/vinext/dist/cli.js",import.meta.url)),"build",...args];
+  const result = spawnSync(binary,buildArgs,{stdio:"inherit"});
   if (result.error) throw result.error;
-  process.exit(result.status ?? 1);
+  if(result.status!==0)process.exit(result.status??1);
+  const verified=spawnSync(process.execPath,[fileURLToPath(new URL("./check-artifact-runtime.mjs",import.meta.url)),"--write-manifest"],{stdio:"inherit"});
+  if(verified.error)throw verified.error;
+  process.exit(verified.status??1);
 }
 
 // Import in this process so the preview owner retains its PID and signals.

@@ -82,6 +82,20 @@ npm run check:public
 npm run build
 ```
 
+Builds now execute the **actual packaged Worker** in isolated workerd and fail
+if its MCP runtime version, ten-tool inventory or controlled error path differs
+from the current source. This runs for both portable and managed-Linux builds;
+source-only tests are not substituted for compiled artifact checks.
+
+`npm run check:artifact` rechecks without rebuilding, including all packaged
+file hashes and source-input fingerprints in `dist/.openai/artifact-manifest.json`.
+Run it on the exact unchanged output being archived/uploaded. A stale version,
+changed source/output, substituted entrypoint or symlinked dependency fails.
+Use a new saved release for a repaired artifact instead of treating an old
+success receipt as proof of the installed app's active runtime. An isolated
+artifact PASS is **not** hosted/installed-app acceptance; independently read
+back `software_version` and an affected tool through the real connection.
+
 The unit tests use synthetic data and local SQLite. They do not prove that your network can retrieve live YouTube captions. The authenticated root page is a status shell, not a transcript viewer.
 
 ### 2. Set up the Sites backend
