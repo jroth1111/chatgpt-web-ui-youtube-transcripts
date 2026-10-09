@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { normalizeHosting } from "./artifact-support.mjs";
 import { fileURLToPath } from "node:url";
 import { readExecutionProfile } from "./execution-profile.mjs";
 
@@ -12,6 +13,7 @@ if (command === "build") {
   const result = spawnSync(binary,buildArgs,{stdio:"inherit"});
   if (result.error) throw result.error;
   if(result.status!==0)process.exit(result.status??1);
+  await normalizeHosting(fileURLToPath(new URL("../dist",import.meta.url)));
   const verified=spawnSync(process.execPath,[fileURLToPath(new URL("./check-artifact-runtime.mjs",import.meta.url)),"--write-manifest"],{stdio:"inherit"});
   if(verified.error)throw verified.error;
   process.exit(verified.status??1);

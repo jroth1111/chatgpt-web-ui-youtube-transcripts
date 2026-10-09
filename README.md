@@ -85,7 +85,10 @@ npm run build
 Builds now execute the **actual packaged Worker** in isolated workerd and fail
 if its MCP runtime version, ten-tool inventory or controlled error path differs
 from the current source. This runs for both portable and managed-Linux builds;
-source-only tests are not substituted for compiled artifact checks.
+source-only tests are not substituted for compiled artifact checks. Generated
+hosting JSON is finalized using the Sites packager's serialization **before**
+recording hashes, so normal packaging cannot invalidate the verified inventory.
+The source hosting contract is not changed.
 
 `npm run check:artifact` rechecks without rebuilding, including all packaged
 file hashes and source-input fingerprints in `dist/.openai/artifact-manifest.json`.
