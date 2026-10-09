@@ -73,29 +73,29 @@ test('batch: valid constructor ID does not inherit an unsolicited cursor',async(
     assert.equal(result.success_count,1);
   }
 });
-test('MCP: ten near-limit Markdown sections appear once and the final wire body is bounded',async()=>{
+test('MCP: ten large Markdown sections appear once above the former response cap',async()=>{
   const headers={'Content-Type':'application/json',Accept:'application/json, text/event-stream','oai-authenticated-user-id':'owner','oai-authenticated-user-email':'owner@example.test'};
   const request=new Request('https://private.example/mcp',{method:'POST',headers,body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'get_transcripts',arguments:{videos:ids}}})});
-  const response=await handleMcp(request,{OWNER_EMAIL:'owner@example.test'},{serviceFactory:()=>({call:async(_name,args)=>({...page(args.url),segments:[{text:'x'.repeat(19000),start:0,duration:1}]})})});
-  const wire=await response.arrayBuffer();assert(wire.byteLength<=256*1024);
+  const response=await handleMcp(request,{OWNER_EMAIL:'owner@example.test'},{serviceFactory:()=>({call:async(_name,args)=>({...page(args.url),segments:[{text:'x'.repeat(33000),start:0,duration:1}]})})});
+  const wire=await response.arrayBuffer();assert(wire.byteLength>256*1024);
   const rpc=JSON.parse(new TextDecoder().decode(wire));
   assert.equal(rpc.result.isError,false);assert.equal(rpc.result.structuredContent.results.length,10);
   assert.equal(Object.hasOwn(rpc.result.structuredContent,'markdown'),false);
-  assert.equal(rpc.result.content[0].text.match(/x{19000}/g).length,10);
+  assert.equal(rpc.result.content[0].text.match(/x{33000}/g).length,10);
 });
-test('MCP: limit measures the final envelope for single-video results too',async()=>{
+test('MCP: large single-video replies are not replaced by a fabricated size-limit error',async()=>{
   const headers={'Content-Type':'application/json',Accept:'application/json, text/event-stream','oai-authenticated-user-id':'owner','oai-authenticated-user-email':'owner@example.test'};
   const request=new Request('https://private.example/mcp',{method:'POST',headers,body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'get_transcript',arguments:{url:ids[0]}}})});
   const response=await handleMcp(request,{OWNER_EMAIL:'owner@example.test'},{serviceFactory:()=>({call:async()=>({text:'x'.repeat(140000)})})});
-  const wire=await response.arrayBuffer();assert(wire.byteLength<=256*1024);
+  const wire=await response.arrayBuffer();assert(wire.byteLength>256*1024);
   const rpc=JSON.parse(new TextDecoder().decode(wire));
-  assert.equal(rpc.result.isError,true);assert.equal(rpc.result.structuredContent.error.code,'response_too_large');
+  assert.equal(rpc.result.isError,false);assert.equal(rpc.result.structuredContent.text.length,140000);
 });
-test('MCP: oversized upstream error details also obey the final wire bound',async()=>{
+test('MCP: removing the size cap preserves the actual upstream error classification',async()=>{
   const headers={'Content-Type':'application/json',Accept:'application/json, text/event-stream','oai-authenticated-user-id':'owner','oai-authenticated-user-email':'owner@example.test'};
   const request=new Request('https://private.example/mcp',{method:'POST',headers,body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'get_transcript',arguments:{url:ids[0],lang:'fr'}}})});
   const response=await handleMcp(request,{OWNER_EMAIL:'owner@example.test'},{serviceFactory:()=>({call:async()=>{throw new TranscriptError('unavailable_language','Language unavailable',{available_languages:[{language:'en',name:'x'.repeat(140000)}]});}})});
-  const wire=await response.arrayBuffer();assert(wire.byteLength<=256*1024);
+  const wire=await response.arrayBuffer();assert(wire.byteLength>256*1024);
   const rpc=JSON.parse(new TextDecoder().decode(wire));
-  assert.equal(rpc.result.isError,true);assert.equal(rpc.result.structuredContent.error.code,'response_too_large');
+  assert.equal(rpc.result.isError,true);assert.equal(rpc.result.structuredContent.error.code,'unavailable_language');
 });

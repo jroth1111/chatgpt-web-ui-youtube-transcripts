@@ -14,7 +14,7 @@ test('all tool reply shapes expose software version; safe sizing includes it and
  const service={call:async()=>page},env={OWNER_EMAIL:'owner@example.test'};
  const call=async(name,serviceFactory=()=>service)=>{
   const request=new Request('https://private.example/mcp',{method:'POST',headers:{'content-type':'application/json',accept:'application/json, text/event-stream','oai-authenticated-user-id':'owner','oai-authenticated-user-email':'owner@example.test'},body:JSON.stringify({jsonrpc:'2.0',id,method:'tools/call',params:{name,arguments:name==='get_transcripts'?{videos:['versionvid0']}:{url:'versionvid0'}}})});
-  const wire=await (await handleMcp(request,env,{serviceFactory})).text(),rpc=JSON.parse(wire);assert.equal(rpc.result.structuredContent.software_version,SOFTWARE_VERSION);assert(Buffer.byteLength(wire)<=256*1024);return wire;
+  const wire=await (await handleMcp(request,env,{serviceFactory})).text(),rpc=JSON.parse(wire);assert.equal(rpc.result.structuredContent.software_version,SOFTWARE_VERSION);return wire;
  };
  await call('get_transcript');
  const wire=await call('get_transcripts'),batch=await transcriptBatch(service,{videos:['versionvid0']},'owner');assert.equal(Buffer.byteLength(wire),responseBytes(batch,id));

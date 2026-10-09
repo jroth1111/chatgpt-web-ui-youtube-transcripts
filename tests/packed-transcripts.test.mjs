@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {transcriptBatch,responseBytes,FULL_RESPONSE_BUDGET} from '../lib/transcript-batch.mjs';
+import {transcriptBatch,responseBytes} from '../lib/transcript-batch.mjs';
 import {cleanTranscript} from '../lib/transcript-markdown.mjs';
 import {SnapshotCache} from '../lib/snapshot-cache.mjs';
 import {TranscriptService} from '../lib/transcript-service.mjs';
@@ -22,7 +22,7 @@ test('packed: cached oversize stops before the assembly deadline and returns res
  const result=await transcriptBatch(service,{videos:[id]},owner,{now:()=>clock,budgetMs:45000});
  assert.equal(result.success_count,1,'available cached text must not be replaced with service_busy');
  assert.equal(result.results[0].delivery,'paged');assert(result.has_more);assert(result.results[0].returned_segment_count>120);
- assert(reads<20,'must not preassemble all 238 physical chunks');assert(responseBytes(result)<=FULL_RESPONSE_BUDGET);
+ assert(reads<20,'must not assemble past the execution deadline');assert.equal(result.results[0].overflow_reason,'assembly_time_budget');
  assert.equal(Number(result.next_cursors[id]),result.results[0].storage_page_end+1);
 });
 
@@ -34,7 +34,7 @@ test('packed: few complete Unicode/ASR windows preserve all stored cues, cursors
   let args={videos:[id]},calls=0,count=0,hash,snapshot,texts=[],previousEnd=-1;
   do{
    const result=await transcriptBatch(service,args,owner,{measure:value=>responseBytes(value,'🦜'.repeat(1000))});
-   const r=result.results[0];assert.equal(r.ok,true);assert(responseBytes(result,'🦜'.repeat(1000))<=FULL_RESPONSE_BUDGET);
+   const r=result.results[0];assert.equal(r.ok,true);assert.equal(result.response_budget_bytes,null);
    if(count>0)assert.equal(r.delivery,'paged','a fitting tail is not the complete transcript');
    assert.equal(r.first_segment_index,count);assert.equal(r.page_index,previousEnd+1);assert(r.storage_pages_consumed>1||!result.has_more);
    hash??=r.segment_hash;snapshot??=r.snapshot_id;assert.equal(r.segment_hash,hash);assert.equal(r.snapshot_id,snapshot);
@@ -42,7 +42,7 @@ test('packed: few complete Unicode/ASR windows preserve all stored cues, cursors
    if(!result.has_more)break;
    assert.equal(r.delivery,'paged');args={videos:[id],next_cursors:result.next_cursors};
   }while(calls<20);
-  assert.equal(count,f.segments.length);assert(calls<=10,`expected packed windows, got ${calls}`);
+  assert.equal(count,f.segments.length);assert.equal(calls,1,'stored chunks must not force client pagination');
   assert.equal(canonical(texts.join(' ')),canonical(cleanTranscript(f.segments,{rolling:true})));
  }finally{db.sqlite.close();}
 });
@@ -69,6 +69,6 @@ test('packed: a near-safe-budget full text stays complete rather than using a co
   await new SnapshotCache(db).write(owner,f);const service=new TranscriptService(db,{extractorFactory:()=>assert.fail('No refetch')});
   const result=await transcriptBatch(service,{videos:[id]},owner);
   assert.equal(result.results[0].delivery,'full');assert.equal(result.results[0].returned_segment_count,1200);assert.equal(result.has_more,false);
-  assert(responseBytes(result)>224*1024);assert(responseBytes(result)<=FULL_RESPONSE_BUDGET);
+  assert(responseBytes(result)>224*1024);assert.equal(result.response_budget_bytes,null);
  }finally{db.sqlite.close();}
 });
